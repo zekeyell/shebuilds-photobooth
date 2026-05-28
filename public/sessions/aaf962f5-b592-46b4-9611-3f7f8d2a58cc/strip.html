@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+<title>SheBuilds Photobooth Strip</title>
+
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+body{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:#f3d9e8;
+  padding:20px;
+}
+
+.strip{
+  position:relative;
+  width:720px;
+  height:2048px;
+  background:url('custom_strip.png') no-repeat center center;
+  background-size:cover;
+}
+
+.photo{
+  position:absolute;
+  left:49px;
+  width:641px;
+  height:482px;
+  object-fit:cover;
+  border-radius:2px;
+}
+
+.p1{ top:52px; }
+.p2{ top:573px; }
+.p3{ top:1095px; }
+
+</style>
+</head>
+
+<body>
+<div class="strip">
+  <img class="photo p1" src="photo_1.jpg"/>
+  <img class="photo p2" src="photo_2.jpg"/>
+  <img class="photo p3" src="photo_3.jpg"/>
+</div>
+</body>
+</html>

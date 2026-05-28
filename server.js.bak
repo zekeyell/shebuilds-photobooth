@@ -1,0 +1,108 @@
+const express  = require("express");
+const fs       = require("fs");
+const path     = require("path");
+const QRCode   = require("qrcode");
+const { v4: uuidv4 } = require("uuid");
+const { createCanvas, loadImage } = require("canvas");
+
+const app  = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(express.static(path.join(__dirname, "public")));
+app.use(express.json({ limit: "30mb" }));
+
+// Photo slot positions on the strip template (x1,y1,x2,y2)
+const SLOTS = [
+  [50,  51,  659, 532 ],
+  [50,  572, 659, 1053],
+  [50,  1093,659, 1574],
+];
+
+app.post("/api/save-session", async (req, res) => {
+  try {
+    const { photos } = req.body;
+    if (!photos || photos.length < 3)
+      return res.status(400).json({ error: "Need 3 photos" });
+
+    const sessionId  = uuidv4();
+    const sessionDir = path.join(__dirname, "public", "sessions", sessionId);
+    fs.mkdirSync(sessionDir, { recursive: true });
+
+    // Save individual photos
+    photos.forEach((dataUrl, i) => {
+      const base64 = dataUrl.replace(/^data:image\/\w+;base64,/, "");
+      fs.writeFileSync(
+        path.join(sessionDir, `photo_${i + 1}.jpg`),
+        Buffer.from(base64, "base64")
+      );
+    });
+
+    // ── Composite photos onto strip template ──
+    const STRIP_W = 710, STRIP_H = 2034;
+    const canvas = createCanvas(STRIP_W, STRIP_H);
+    const ctx    = canvas.getContext("2d");
+
+    // Draw template
+    const template = await loadImage(
+      path.join(__dirname, "public", "Photostrip.png")
+    );
+    ctx.drawImage(template, 0, 0, STRIP_W, STRIP_H);
+
+    // Paste each photo into its slot
+    for (let i = 0; i < 3; i++) {
+      const [x1, y1, x2, y2] = SLOTS[i];
+      const slotW = x2 - x1, slotH = y2 - y1;
+      const photoPath = path.join(sessionDir, `photo_${i + 1}.jpg`);
+      const photo = await loadImage(photoPath);
+
+      // Cover-fit: scale to fill slot, center crop
+      const scaleX = slotW / photo.width;
+      const scaleY = slotH / photo.height;
+      const scale  = Math.max(scaleX, scaleY);
+      const drawW  = photo.width  * scale;
+      const drawH  = photo.height * scale;
+      const offsetX = x1 + (slotW - drawW) / 2;
+      const offsetY = y1 + (slotH - drawH) / 2;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x1, y1, slotW, slotH);
+      ctx.clip();
+      ctx.drawImage(photo, offsetX, offsetY, drawW, drawH);
+      ctx.restore();
+    }
+
+    // Draw template again on top so decorations overlay the photos
+    ctx.drawImage(template, 0, 0, STRIP_W, STRIP_H);
+
+    // Save composited strip as PNG
+    const stripPng  = canvas.toBuffer("image/png");
+    const stripPath = path.join(sessionDir, "strip.png");
+    fs.writeFileSync(stripPath, stripPng);
+
+    // QR code points directly to the strip PNG (downloadable)
+    const host       = req.get("host");
+    const protocol   = req.protocol;
+    const stripUrl   = `${protocol}://${host}/sessions/${sessionId}/strip.png`;
+    const qrCode     = await QRCode.toDataURL(stripUrl, {
+      width: 300, margin: 2,
+      color: { dark: "#e91e8c", light: "#fff0f8" }
+    });
+
+    res.json({ qrCode, stripUrl, sessionId });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error: " + err.message });
+  }
+});
+
+app.get("/api/session/:id", (req, res) => {
+  const stripPath = path.join(__dirname, "public", "sessions", req.params.id, "strip.png");
+  if (!fs.existsSync(stripPath))
+    return res.status(404).json({ error: "Session not found" });
+  res.json({ stripUrl: `/sessions/${req.params.id}/strip.png` });
+});
+
+app.listen(PORT, () => {
+  console.log(`🌸  SheBuilds Photobooth running at http://localhost:${PORT}`);
+});
