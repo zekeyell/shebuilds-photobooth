@@ -276,16 +276,35 @@ def build_html(b_tu, b_dr, b_sh, b_lg, b_gd, b_st):
       .gigi{{right:20px;width:200px}}
     }}
     @media(max-width:700px){{
+      /* Hide Gigi on mobile — she blocks everything */
+      .gigi{{display:none}}
+
+      /* Screen 1 */
       .s1-inner{{flex-direction:column;gap:16px;padding:64px 16px 16px;text-align:center}}
       .sb-logo{{width:clamp(200px,68vw,340px)}}
+
+      /* Screen 2 */
       .s2-inner{{flex-direction:column;padding:60px 12px 12px;gap:10px}}
       .s2-strip-wrap{{width:100%}}
       .s2-strip{{flex-direction:row;padding:8px;flex:none}}
       .s2-slot{{height:75px;flex:1}}
-      .s3-inner{{flex-direction:column;padding:68px 16px 16px;gap:16px}}
-      .s3-strip{{flex-direction:row;width:100%;padding:8px}}
-      .s3-slot{{height:88px;flex:1}}
-      .gigi{{right:10px;width:130px}}
+
+      /* Screen 3 — scrollable */
+      .screen#screen-3{{overflow-y:auto;align-items:flex-start}}
+      .s3-inner{{
+        flex-direction:column;
+        padding:68px 16px 40px;
+        gap:20px;
+        min-height:100%;
+        width:100%;
+        align-items:center;
+      }}
+      .s3-strip-wrap{{width:100%;display:flex;justify-content:center}}
+      .s3-strip-img{{width:55vw;max-width:260px}}
+      .s3-content{{width:100%;align-items:center}}
+      .scan-label{{font-size:.78rem;padding:9px 20px}}
+      .qr-box{{width:180px;height:180px}}
+      .s3-btns .btn{{padding:12px 40px}}
     }}
   </style>
 </head>
