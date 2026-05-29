@@ -331,10 +331,21 @@
     if(n===3)setGigi('thumbsup');
   }
   let stream=null,photos=[],shooting=false;
+  // Pre-grant camera permission so device labels are readable
+  navigator.mediaDevices.getUserMedia({video:true,audio:false})
+    .then(s=>s.getTracks().forEach(t=>t.stop())).catch(()=>{});
+
   async function startCam(){
-    try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:1280},height:{ideal:720}},audio:false});}
-    catch{try{stream=await navigator.mediaDevices.getUserMedia({video:true,audio:false});}
-    catch{setStatus('⚠️ Camera not available.');return;}}
+    const devices=await navigator.mediaDevices.enumerateDevices();
+    const videoDevices=devices.filter(d=>d.kind==='videoinput');
+    const preferred=videoDevices.find(d=>/droidcam|iriun|epoccam|obs|virtual|phone/i.test(d.label));
+    const deviceId=preferred?preferred.deviceId:videoDevices[0]?.deviceId;
+    try{
+      stream=await navigator.mediaDevices.getUserMedia({video:{deviceId:{exact:deviceId},width:{ideal:1280},height:{ideal:720}},audio:false});
+    }catch{
+      try{stream=await navigator.mediaDevices.getUserMedia({video:true,audio:false});}
+      catch{setStatus('⚠️ Camera not available.');return;}
+    }
     $('camera-video').srcObject=stream;
   }
   function stopCam(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}}
