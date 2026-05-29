@@ -338,8 +338,8 @@
   async function startCam(){
     const devices=await navigator.mediaDevices.enumerateDevices();
     const videoDevices=devices.filter(d=>d.kind==='videoinput');
-    const preferred=videoDevices.find(d=>/droidcam|iriun|epoccam|obs|virtual|phone/i.test(d.label));
-    const deviceId=preferred?preferred.deviceId:videoDevices[0]?.deviceId;
+    // Camera preference removed — always use the first local camera
+    const deviceId=videoDevices[0]?.deviceId;
     try{
       stream=await navigator.mediaDevices.getUserMedia({video:{deviceId:{exact:deviceId},width:{ideal:1280},height:{ideal:720}},audio:false});
     }catch{
