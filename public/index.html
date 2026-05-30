@@ -410,7 +410,7 @@
       const [x1,y1,x2,y2]=SLOTS[i];
       const sw=x2-x1, sh=y2-y1;
       const photo=await loadImg(photoDataUrls[i]);
-      const scale=Math.max(sw/photo.naturalWidth, sh/photo.naturalHeight);
+      const scale=Math.min(sw/photo.naturalWidth, sh/photo.naturalHeight);
       const dw=photo.naturalWidth*scale, dh=photo.naturalHeight*scale;
       const ox=x1+(sw-dw)/2, oy=y1+(sh-dh)/2;
       ctx.save();
